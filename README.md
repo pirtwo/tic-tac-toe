@@ -10,7 +10,7 @@ for running the game:
 
 ```
 npm install
-npm run
+npm run tictac
 ```
 
 Have fun :smile:
