@@ -214,6 +214,8 @@ function computerPlay() {
         }
     }
 
+    moves = shuffle(moves);
+
     let bestMove = moves.find(m => m.score == Math.max.apply({}, moves.map(i => i.score)));
 
     boardManager.execute(bestMove);
