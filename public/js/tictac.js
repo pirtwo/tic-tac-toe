@@ -2,12 +2,16 @@ var boardManager;
 var mouseClickedEvent = new Event();
 
 var isPaused = false,
+    isLogging = false,
     titleFont,
     status = "",
+    gameLog = [],
     newGameButton,
     pauseButton,
     undoButton,
-    redoButton;
+    redoButton,
+    logButton,
+    saveLogButton;
 
 function preload() {
     titleFont = loadFont('font/Modak-Regular.ttf');
@@ -33,6 +37,7 @@ function setup() {
             console.log('REDO')
         },
         moveExecutedCallback: (e) => {
+            if(isLogging) logMove(e, boardManager.board);
             console.log(`Move Executed: ${e.player}:[row:${e.row + 1}, col:${e.col + 1}]`)
         },
     });
@@ -83,6 +88,27 @@ function setup() {
             boardManager.redo();
         }
     });
+
+    logButton = new Button({
+        x: 410,
+        y: 350,
+        width: 90,
+        text: 'LOG: OFF',
+        clickCallback: () => {
+            isLogging = !isLogging;
+            logButton.text = isLogging ? "LOG: ON" : "LOG: OFF";
+        }
+    });
+
+    saveLogButton = new Button({
+        x: 410,
+        y: 400,
+        width: 90,
+        text: 'SAVE LOG',
+        clickCallback: () => {
+            saveJSON(gameLog, 'log.json');
+        }
+    });
 }
 
 function draw() {
@@ -96,11 +122,9 @@ function draw() {
     textFont(titleFont);
     textAlign(CENTER, CENTER);
     text('TIC TAC TOE :)', 100, 0, 400, 115);
-
     textSize(20);
     textStyle(NORMAL);
     text('CREATOR: 1KFUN', 400, 470, 200, 200);
-
     textFont('Courier New');
 
     // draw board
@@ -111,6 +135,8 @@ function draw() {
     pauseButton.draw();
     undoButton.draw();
     redoButton.draw();
+    logButton.draw();
+    saveLogButton.draw();
 
     // computer play
     if (boardManager.currentPlayer == boardManager.computerPlayer) {
@@ -135,7 +161,7 @@ function gameStatus() {
     textAlign(LEFT, TOP);
     textStyle(BOLD);
     textSize(15);
-    
+
     if (boardManager.getWinner() == 'X')
         status = `STATUS: X IS WINNER`;
     if (boardManager.getWinner() == 'O')
@@ -219,4 +245,17 @@ function computerPlay() {
     let bestMove = moves.find(m => m.score == Math.max.apply({}, moves.map(i => i.score)));
 
     boardManager.execute(bestMove);
+}
+
+function logMove(move, board) {
+    let log = {
+        player: move.player,
+        move: {
+            row: move.row,
+            col: move.col
+        },
+        board: board.map(r => r.slice(0))
+    }
+
+    gameLog.push(log);
 }
