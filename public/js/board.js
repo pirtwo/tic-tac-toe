@@ -3,9 +3,6 @@ class BoardManager {
         grid = 3,
         boardSize,
         boardPosition,
-        startingPlayer = 'X',
-        computerPlayer = 'X',
-        humanPlayer = 'O',
         moveExecutedCallback, 
         moveUndoCallback,
         moveRedoCallback,
@@ -21,11 +18,7 @@ class BoardManager {
         this.boardPosition = boardPosition;
         this.undoList = [];
         this.redoList = [];
-        this.startingPlayer = startingPlayer;
-        this.currentPlayer = startingPlayer;
-        this.computerPlayer = computerPlayer;
-        this.humanPlayer = humanPlayer;
-
+        
         // callbacks
         this.moveExecutedCallback = moveExecutedCallback;
         this.moveUndoCallback = moveUndoCallback;
@@ -35,9 +28,8 @@ class BoardManager {
 
     execute(move) {
         if (this.isCellOpen(move) && !this.getWinner()) {
-            this.board[move.row][move.col] = this.currentPlayer;
+            this.board[move.row][move.col] = move.player;
             this.undoList.push(move);
-            this.currentPlayer = this.getNextPlayer();
             this.moveExecutedCallback(move);            
         }
     }
@@ -47,7 +39,6 @@ class BoardManager {
         if (move) {
             this.redoList.push(move);
             this.board[move.row][move.col] = 0;
-            this.currentPlayer = this.getNextPlayer();
             this.moveUndoCallback(move);            
         }
     }
@@ -94,23 +85,7 @@ class BoardManager {
             return null;
         }
     }
-
-    getNextPlayer() {
-        return this.currentPlayer == 'X' ? 'O' : 'X';
-    }
-
-    setStartPlayer(player = 'X') {
-        this.currentPlayer = player;
-    }
-
-    setComputerPlayer(player = 'X') {
-        this.computerPlayer = player;
-    }
-
-    setHumanPlayer(player = 'O') {
-        this.humanPlayer = player;
-    }
-
+    
     resetBoard() {
         this.board = [
             [0, 0, 0],
@@ -119,7 +94,6 @@ class BoardManager {
         ];
         this.undoList = [];
         this.redoList = [];
-        this.currentPlayer = this.startingPlayer;
         this.boardResetCallback();        
     }
 
