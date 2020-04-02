@@ -1,18 +1,18 @@
-function minmax(node, depth, currentPlayer = 'max') {
+function minmax(node, depth, type = 'max') {
     let value;
 
     if (depth == 0 || node.isTerminal()) {
-        return node.getValue() * (depth + 1);
+        return node.getValue();
     }
 
-    if (currentPlayer == 'max') {
+    if (type == 'max') {
         value = -Infinity;
         node.getSuccessors().forEach(child => {
             value = max(value, minmax(child, depth - 1, 'min'));
         });
     }
 
-    if (currentPlayer == 'min') {
+    if (type == 'min') {
         value = Infinity;
         node.getSuccessors().forEach(child => {
             value = min(value, minmax(child, depth - 1, 'max'));
@@ -26,43 +26,21 @@ class TicTacNode {
     constructor({
         board = [],
         player,
-        parent = null,
-        depth = 0
+        parent = null
     }) {
         this.board = board;
         this.player = player;
         this.parent = parent;
-        this.depth = depth;
+    }
+
+    isTerminal() {
+        return this.getWinner() !== null || !this.board.find(r => r.includes(0));
     }
 
     getValue() {
-        let winner = this.getWinner();
-
-        if (winner == 'X')
-            return 1;
-        else if (winner == 'O')
-            return -1;
-        else {
-            let score = 0;
-            let player = this.player == 'X' ? 'O' : 'X';
-
-            // middele
-            score += this.board[1][1] == player ? 0.2 : 0;
-
-            // corners
-            score += this.board[0][0] == player ? 0.15 : 0;
-            score += this.board[0][2] == player ? 0.15 : 0;
-            score += this.board[2][0] == player ? 0.15 : 0;
-            score += this.board[2][2] == player ? 0.15 : 0;
-
-            // other cells
-            score += this.board[0][1] == player ? 0.05 : 0;
-            score += this.board[1][0] == player ? 0.05 : 0;
-            score += this.board[1][2] == player ? 0.05 : 0;
-            score += this.board[2][1] == player ? 0.05 : 0;
-
-            return player == 'X' ? score : -score;
-        }
+        if (this.getWinner() == this.player)
+            return this.player == 'X' ? 1 : -1;
+        else return 0;
     }
 
     getSuccessors() {
@@ -74,19 +52,13 @@ class TicTacNode {
                 if (this.board[i][j] == 0) {
                     child = this.clone();
                     child.parent = this;
-                    child.player = this.player == 'X' ? 'O' : 'X';
-                    child.depth = this.depth + 1;
-                    child.board[i][j] = this.player;
+                    child.board[i][j] = child.player = this.getRival();
                     successors.push(child);
                 }
             }
         }
 
         return successors;
-    }
-
-    isTerminal() {
-        return this.getWinner() !== null;
     }
 
     getWinner() {
@@ -115,14 +87,15 @@ class TicTacNode {
         return null;
     }
 
+    getRival() {
+        return this.player == 'X' ? 'O' : 'X';
+    }
+
     clone() {
-        let newBoard = [];
-        this.board.forEach(row => newBoard.push(row.slice()));
         return new TicTacNode({
-            board: newBoard,
+            board: this.board.map(r => r.slice(0)),
             player: this.player,
-            parent: this.parent,
-            depth: this.depth
+            parent: this.parent
         });
     }
 }
