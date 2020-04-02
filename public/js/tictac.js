@@ -1,11 +1,14 @@
 var boardManager;
 var mouseClickedEvent = new Event();
 
-var isPaused = false,
-    isLogging = false,
+var isLogging = false,
     titleFont,
-    status = "",
     gameLog = [],
+    gameMode,
+    gameStatus,
+    playerOne,
+    playerTwo,
+    currentPlayer,
     newGameButton,
     pauseButton,
     undoButton,
@@ -13,12 +16,40 @@ var isPaused = false,
     logButton,
     saveLogButton;
 
+const GAMESTATS = {
+    'PLAY': 0,
+    'PAUSE': 1
+}
+
+const GAMEMODES = {
+    // computer vs human
+    'CvsH': 0,
+
+    // human vs human
+    'HvsH': 1,
+
+    // computer vs computer
+    'CvsC': 2
+}
+
 function preload() {
     titleFont = loadFont('font/Modak-Regular.ttf');
 }
 
 function setup() {
     createCanvas(600, 600);
+
+    gameMode = GAMEMODES.CvsH;
+    gameStatus = GAMESTATS.PLAY;
+    playerOne = {
+        isHuman: false,
+        sign: 'X'
+    };
+    playerTwo = {
+        isHuman: true,
+        sign: 'O'
+    };;
+    currentPlayer = playerOne;
 
     boardManager = new BoardManager({
         grid: 3,
@@ -31,18 +62,18 @@ function setup() {
             console.log('NEW GAME')
         },
         moveUndoCallback: () => {
+            currentPlayer = getNextPlayer();
             console.log('UNDO')
         },
         moveRedoCallback: () => {
+            currentPlayer = getNextPlayer();
             console.log('REDO')
         },
         moveExecutedCallback: (e) => {
-            if(isLogging) logMove(e, boardManager.board);
+            if (isLogging) logMove(e, boardManager.board);
             console.log(`Move Executed: ${e.player}:[row:${e.row + 1}, col:${e.col + 1}]`)
         },
     });
-
-    mouseClickedEvent.subscribe(humanPlay);
 
     newGameButton = new Button({
         x: 410,
@@ -50,6 +81,7 @@ function setup() {
         width: 90,
         text: 'NEW',
         clickCallback: () => {
+            currentPlayer = playerOne;
             boardManager.resetBoard();
         }
     });
@@ -60,8 +92,13 @@ function setup() {
         width: 90,
         text: 'PAUSE',
         clickCallback: () => {
-            isPaused = !isPaused;
-            pauseButton.text = isPaused ? 'PLAY' : 'PAUSE';
+            if (gameStatus == GAMESTATS.PLAY) {
+                gameStatus = GAMESTATS.PAUSE;
+                pauseButton.text = 'PLAY';
+            } else {
+                gameStatus = GAMESTATS.PLAY;
+                pauseButton.text = 'PAUSE';
+            }
         }
     });
 
@@ -71,7 +108,7 @@ function setup() {
         width: 90,
         text: 'UNDO',
         clickCallback: () => {
-            isPaused = true;
+            gameStatus = GAMESTATS.PAUSE;
             pauseButton.text = 'PLAY';
             boardManager.undo();
         }
@@ -83,7 +120,7 @@ function setup() {
         width: 90,
         text: 'REDO',
         clickCallback: () => {
-            isPaused = true;
+            gameStatus = GAMESTATS.PAUSE;
             pauseButton.text = 'PLAY';
             boardManager.redo();
         }
@@ -109,6 +146,147 @@ function setup() {
             saveJSON(gameLog, 'log.json');
         }
     });
+
+    mouseClickedEvent.subscribe(onMouseClicked);
+}
+
+function mouseClicked(e) {
+    mouseClickedEvent.callEventHandlers({
+        mouseX,
+        mouseY,
+        mouseButton
+    });
+    return false;
+}
+
+function onMouseClicked(e) {
+    if (isBoardClicked(e.mouseX, e.mouseY) && canHumanPlay()) {
+        let cell = getClickedCell(e.mouseX, e.mouseY);
+        humanPlay({
+            player: currentPlayer.sign,
+            row: cell.row,
+            col: cell.col
+        });
+    }
+}
+
+function canHumanPlay() {
+    return gameStatus != GAMESTATS.PAUSE && gameMode != GAMEMODES.CvsC && currentPlayer.isHuman;
+}
+
+function canComputerPlay() {
+    return gameStatus != GAMESTATS.PAUSE && gameMode != GAMEMODES.HvsH && !currentPlayer.isHuman;
+}
+
+function humanPlay(move) {
+    boardManager.execute(move);
+    currentPlayer = getNextPlayer();
+}
+
+function computerPlay() {
+    if (gameStatus == GAMESTATS.PAUSE) return;
+
+    let moves = [],
+        board = boardManager.board;
+
+    let currentState = new TicTacNode({
+        board: boardManager.board,
+        player: currentPlayer.sign
+    });
+
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board.length; j++) {
+            if (board[i][j] != 0) continue;
+
+            let node = currentState.clone();
+
+            node.board[i][j] = currentPlayer.sign;
+            node.player = getNextPlayer().sign;
+
+            moves.push({
+                row: i,
+                col: j,
+                player: currentPlayer.sign,
+                score: minmax(node, 5, 'min')
+            });
+        }
+    }
+
+    moves = shuffle(moves);
+
+    let bestMove = moves.find(m => m.score == Math.max.apply({}, moves.map(i => i.score)));
+
+    boardManager.execute(bestMove);
+    currentPlayer = getNextPlayer();
+}
+
+function logMove(move, board) {
+    let log = {
+        player: move.player,
+        move: {
+            row: move.row,
+            col: move.col
+        },
+        board: board.map(r => r.slice(0))
+    }
+
+    gameLog.push(log);
+}
+
+function isBoardClicked(mouseX, mouseY) {
+    return mouseX > boardManager.boardPosition.x &&
+        mouseX < boardManager.boardPosition.x + boardManager.boardSize &&
+        mouseY > boardManager.boardPosition.y &&
+        mouseY < boardManager.boardPosition.y + boardManager.boardSize;
+}
+
+function getClickedCell(mouseX, mouseY) {
+    let x, y, cellSize = boardManager.boardSize / boardManager.grid;
+
+    for (let i = 0; i < boardManager.grid; i++) {
+        y = boardManager.boardPosition.y + cellSize * i;
+        for (let j = 0; j < boardManager.grid; j++) {
+            x = boardManager.boardPosition.x + cellSize * j;
+
+            if (mouseX > x &&
+                mouseX < x + cellSize &&
+                mouseY > y &&
+                mouseY < y + cellSize
+            ) {
+                return {
+                    row: i,
+                    col: j
+                }
+            }
+        }
+    }
+}
+
+function getNextPlayer() {
+    return currentPlayer.sign == playerOne.sign ? playerTwo : playerOne;
+}
+
+function drawStatus() {
+    let status = "";
+    if (gameStatus == GAMESTATS.PAUSE) 
+        status = `STATUS: PAUSED`;        
+    else if (boardManager.getWinner() == 'X')
+        status = `STATUS: X IS WINNER`;
+    else if (boardManager.getWinner() == 'O')
+        status = `STATUS: O IS WINNER`;
+    else if (boardManager.getWinner() == 'tie')
+        status = `STATUS: GAME IS TIE`;
+    else if (boardManager.getWinner() == null) {
+        if (currentPlayer.sign == 'X')
+            status = `STATUS: X TURN`;
+        if (currentPlayer.sign == 'O')
+            status = `STATUS: O TURN`;
+    }
+
+    textAlign(LEFT, TOP);
+    textStyle(BOLD);
+    textSize(15);
+    text(status, 100, 470, 400, 200);
 }
 
 function draw() {
@@ -139,123 +317,8 @@ function draw() {
     saveLogButton.draw();
 
     // computer play
-    if (boardManager.currentPlayer == boardManager.computerPlayer) {
-        if (frameCount % 10 == 0)
-            computerPlay();
-    }
+    if (frameCount % 20 == 0 && canComputerPlay()) computerPlay();
 
     // draw status 
-    gameStatus();
-}
-
-function mouseClicked(e) {
-    mouseClickedEvent.callEventHandlers({
-        mouseX,
-        mouseY,
-        mouseButton
-    });
-    return false;
-}
-
-function gameStatus() {
-    textAlign(LEFT, TOP);
-    textStyle(BOLD);
-    textSize(15);
-
-    if (boardManager.getWinner() == 'X')
-        status = `STATUS: X IS WINNER`;
-    if (boardManager.getWinner() == 'O')
-        status = `STATUS: O IS WINNER`;
-    if (boardManager.getWinner() == 'tie')
-        status = `STATUS: GAME IS TIE`;
-    if (boardManager.getWinner() == null) {
-        if (boardManager.currentPlayer == boardManager.humanPlayer)
-            status = `STATUS: YOUR TURN`;
-        if (boardManager.currentPlayer == boardManager.computerPlayer)
-            status = `STATUS: AI TURN`;
-    }
-
-    text(status, 100, 470, 400, 200);
-}
-
-function humanPlay(e) {
-    if (isPaused) return;
-
-    let mouseX = e.mouseX,
-        mouseY = e.mouseY;
-    if (mouseX > boardManager.boardPosition.x &&
-        mouseX < boardManager.boardPosition.x + boardManager.boardSize &&
-        mouseY > boardManager.boardPosition.y &&
-        mouseY < boardManager.boardPosition.y + boardManager.boardSize &&
-        boardManager.currentPlayer == boardManager.humanPlayer
-    ) {
-        let x, y, cellSize = boardManager.boardSize / boardManager.grid;
-        for (let i = 0; i < boardManager.grid; i++) {
-            y = boardManager.boardPosition.y + cellSize * i;
-            for (let j = 0; j < boardManager.grid; j++) {
-                x = boardManager.boardPosition.x + cellSize * j;
-
-                if (mouseX > x &&
-                    mouseX < x + cellSize &&
-                    mouseY > y &&
-                    mouseY < y + cellSize
-                ) {
-                    boardManager.execute({
-                        player: boardManager.humanPlayer,
-                        row: i,
-                        col: j
-                    });
-                }
-            }
-        }
-    }
-}
-
-function computerPlay() {
-    if (isPaused) return;
-
-    let moves = [],
-        board = boardManager.board;
-
-    let currentState = new TicTacNode({
-        board: boardManager.board,
-        player: boardManager.computerPlayer
-    });
-
-    for (let i = 0; i < board.length; i++) {
-        for (let j = 0; j < board.length; j++) {
-            if (board[i][j] != 0) continue;
-
-            let node = currentState.clone();
-
-            node.board[i][j] = boardManager.computerPlayer;
-            node.player = boardManager.humanPlayer;
-
-            moves.push({
-                row: i,
-                col: j,
-                player: boardManager.computerPlayer,
-                score: minmax(node, 5, 'min')
-            });
-        }
-    }
-
-    moves = shuffle(moves);
-
-    let bestMove = moves.find(m => m.score == Math.max.apply({}, moves.map(i => i.score)));
-
-    boardManager.execute(bestMove);
-}
-
-function logMove(move, board) {
-    let log = {
-        player: move.player,
-        move: {
-            row: move.row,
-            col: move.col
-        },
-        board: board.map(r => r.slice(0))
-    }
-
-    gameLog.push(log);
+    drawStatus();
 }
