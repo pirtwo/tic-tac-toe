@@ -197,17 +197,13 @@ function computerPlay() {
     for (let i = 0; i < board.length; i++) {
         for (let j = 0; j < board.length; j++) {
             if (board[i][j] != 0) continue;
-
             let node = currentState.clone();
-
-            node.board[i][j] = currentPlayer.sign;
-            node.player = getNextPlayer().sign;
-
+            node.board[i][j] = node.player = currentPlayer.sign;            
             moves.push({
                 row: i,
                 col: j,
                 player: currentPlayer.sign,
-                score: minmax(node, 5, 'min')
+                score: minmax(node, 10, currentPlayer.sign == 'X' ? 'min' : 'max')
             });
         }
     }
