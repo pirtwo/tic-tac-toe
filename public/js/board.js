@@ -3,7 +3,7 @@ class BoardManager {
         grid = 3,
         boardSize,
         boardPosition,
-        moveExecutedCallback, 
+        moveExecutedCallback,
         moveUndoCallback,
         moveRedoCallback,
         boardResetCallback,
@@ -18,19 +18,19 @@ class BoardManager {
         this.boardPosition = boardPosition;
         this.undoList = [];
         this.redoList = [];
-        
+
         // callbacks
         this.moveExecutedCallback = moveExecutedCallback;
         this.moveUndoCallback = moveUndoCallback;
         this.moveRedoCallback = moveRedoCallback;
-        this.boardResetCallback = boardResetCallback;       
+        this.boardResetCallback = boardResetCallback;
     }
 
     execute(move) {
         if (this.isCellOpen(move) && !this.getWinner()) {
             this.board[move.row][move.col] = move.player;
             this.undoList.push(move);
-            this.moveExecutedCallback(move);            
+            this.moveExecutedCallback(move);
         }
     }
 
@@ -39,7 +39,7 @@ class BoardManager {
         if (move) {
             this.redoList.push(move);
             this.board[move.row][move.col] = 0;
-            this.moveUndoCallback(move);            
+            this.moveUndoCallback(move);
         }
     }
 
@@ -47,7 +47,7 @@ class BoardManager {
         let move = this.redoList.pop();
         if (move) {
             this.execute(move);
-            this.moveRedoCallback(move);            
+            this.moveRedoCallback(move);
         }
     }
 
@@ -85,8 +85,21 @@ class BoardManager {
             return null;
         }
     }
-    
-    resetBoard() {
+
+    getOpenCells() {
+        let openCells = [];
+        for (let i = 0; i < this.board.length; i++) {
+            for (let j = 0; j < this.board[i].length; j++) {
+                openCells.push({
+                    row: i,
+                    col: j
+                });
+            }
+        }
+        return openCells;
+    }
+
+    reset() {
         this.board = [
             [0, 0, 0],
             [0, 0, 0],
@@ -94,7 +107,7 @@ class BoardManager {
         ];
         this.undoList = [];
         this.redoList = [];
-        this.boardResetCallback();        
+        this.boardResetCallback();
     }
 
     draw() {
