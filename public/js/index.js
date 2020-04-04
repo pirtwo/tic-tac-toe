@@ -16,7 +16,7 @@ function preload() {
 }
 
 function setup() {
-    createCanvas(700, 600);
+    createCanvas(680, 600);
 
     boardManager = new BoardManager({
         grid: 3,
@@ -303,10 +303,10 @@ function draw() {
     textStyle(BOLD);
     textFont(titleFont);
     textAlign(CENTER, CENTER);
-    text('TIC TAC TOE :)', 100, 0, 400, 115);
+    text('TIC TAC TOE :)', 0, 0, 680, 115);
     textSize(20);
     textStyle(NORMAL);
-    text('CREATOR: 1KFUN', 400, 470, 200, 200);
+    text('CREATOR: 1KFUN', 430, 470, 200, 200);
     textFont('Courier New');
 
     // draw board
