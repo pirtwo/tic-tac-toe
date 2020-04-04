@@ -51,6 +51,10 @@ class BoardManager {
         }
     }
 
+    hasOpenCell() {
+        return this.board.find(r => r.includes(0)) !== null;
+    }
+
     isCellOpen(move) {
         return this.board[move.row][move.col] === 0;
     }
@@ -90,7 +94,7 @@ class BoardManager {
         let openCells = [];
         for (let i = 0; i < this.board.length; i++) {
             for (let j = 0; j < this.board[i].length; j++) {
-                openCells.push({
+                if (this.board[i][j] == 0) openCells.push({
                     row: i,
                     col: j
                 });
