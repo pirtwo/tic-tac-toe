@@ -114,7 +114,7 @@ export default class BoardManager {
         this.boardResetCallback();
     }
 
-    draw() {
+    draw(p5) {
         let x = this.boardPosition.x,
             y = this.boardPosition.y,
             size = 300,
@@ -139,24 +139,24 @@ export default class BoardManager {
             };
 
         // draw container
-        rectMode(CORNER);
-        stroke('black');
-        strokeWeight(2);
-        noFill();
-        square(x, y, size);
+        p5.rectMode(p5.CORNER);
+        p5.stroke('black');
+        p5.strokeWeight(2);
+        p5.noFill();
+        p5.square(x, y, size);
 
         // draw cells
         for (let i = 1; i < cuts; i++) {
-            line(topLeft.x, topLeft.y + cellSize * i, topRight.x, topRight.y + cellSize * i);
+            p5.line(topLeft.x, topLeft.y + cellSize * i, topRight.x, topRight.y + cellSize * i);
         }
 
         for (let i = 1; i < cuts; i++) {
-            line(topLeft.x + cellSize * i, topLeft.y, bottomLeft.x + cellSize * i, bottomLeft.y);
+            p5.line(topLeft.x + cellSize * i, topLeft.y, bottomLeft.x + cellSize * i, bottomLeft.y);
         }
 
-        rectMode(CENTER);
-        textSize(50);
-        fill('black');
+        p5.rectMode(p5.CENTER);
+        p5.textSize(50);
+        p5.fill('black');
 
         let cx, cy;
         for (let i = 0; i < this.board.length; i++) {
@@ -164,14 +164,14 @@ export default class BoardManager {
                 cx = x + j * cellSize + cellSize / 2;
                 cy = y + i * cellSize + cellSize / 2;
 
-                noFill();
+                p5.noFill();
                 if (this.board[i][j] == 'X') {
-                    line(cx - 15, cy - 15, cx + 15, cy + 15);
-                    line(cx - 15, cy + 15, cx + 15, cy - 15);
+                    p5.line(cx - 15, cy - 15, cx + 15, cy + 15);
+                    p5.line(cx - 15, cy + 15, cx + 15, cy - 15);
                 }
 
                 if (this.board[i][j] == 'O') {
-                    circle(cx, cy, 40);
+                    p5.circle(cx, cy, 40);
                 }
             }
         }
