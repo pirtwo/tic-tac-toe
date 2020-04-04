@@ -38,8 +38,10 @@ class TicTacNode {
     }
 
     getValue() {
-        if (this.getWinner() == this.player)
-            return this.player == 'X' ? 1 : -1;
+        if (this.getWinner() == 'X')
+            return 1;
+        if (this.getWinner() == 'O')
+            return -1;
         else return 0;
     }
 
