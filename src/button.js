@@ -7,6 +7,7 @@ export default class Button {
         buttonColor = '#20afd6',
         text = 'default text',
         textColor = '#ffffff',
+        mouseClickedEvent,
         clickCallback = (e) => {
             console.log(e)
         }
@@ -22,7 +23,7 @@ export default class Button {
 
         // subscribe to mouse click event
         this.clickedEvent = mouseClickedEvent;
-        this.clickedEvent.subscribe((e) => {            
+        this.clickedEvent.subscribe((e) => {                      
             if (this.isInBoundaries(e.mouseX, e.mouseY))
                 this.clickCallback(e);
         });
@@ -39,17 +40,17 @@ export default class Button {
         }
     }
 
-    draw() {
-        rectMode(CORNER);
-        strokeWeight(2);
-        stroke('#000000');
-        fill(this.buttonColor);
-        rect(this.x, this.y, this.width, this.height, 5);
+    draw(p5) {
+        p5.rectMode(p5.CORNER);
+        p5.strokeWeight(2);
+        p5.stroke('#000000');
+        p5.fill(this.buttonColor);
+        p5.rect(this.x, this.y, this.width, this.height, 5);
 
-        noStroke();
-        fill(this.textColor);
-        textSize(15);
-        textAlign(CENTER, CENTER);
-        text(this.text, this.x, this.y, this.width, this.height);
+        p5.noStroke();
+        p5.fill(this.textColor);
+        p5.textSize(15);
+        p5.textAlign(p5.CENTER, p5.CENTER);
+        p5.text(this.text, this.x, this.y, this.width, this.height);
     }
 }
