@@ -13,5 +13,8 @@
   "scripts": {
     "build": "webpack",
     "start": "webpack-dev-server --mode development --hot"
+  },
+  "dependencies": {
+    "p5": "^1.0.0"
   }
 }
