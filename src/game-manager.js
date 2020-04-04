@@ -1,21 +1,4 @@
-const GAMESTATS = {
-    'play': 0,
-    'pause': 1
-}
-
-const GAMEMODES = {
-    'cvh': 0, // computer vs human
-    'hvh': 1, // human vs human
-    'cvc': 2 // computer vs computer
-}
-
-const GAMEDIFFICULTY = {
-    'easy': 0,
-    'normal': 3,
-    'impossible': 10
-}
-
-class GameManager {
+export class GameManager {
     constructor({
         mode,
         status,
@@ -170,4 +153,21 @@ class GameManager {
 
         return status;
     }
+}
+
+export const GAMESTATS = {
+    'play': 0,
+    'pause': 1
+}
+
+export const GAMEMODES = {
+    'cvh': 0, // computer vs human
+    'hvh': 1, // human vs human
+    'cvc': 2 // computer vs computer
+}
+
+export const GAMEDIFFICULTY = {
+    'easy': 0,
+    'normal': 3,
+    'impossible': 10
 }

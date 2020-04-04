@@ -1,4 +1,4 @@
-class BoardManager {
+export default class BoardManager {
     constructor({
         grid = 3,
         boardSize,
