@@ -1,55 +1,22 @@
-var boardManager;
+var gameManager, boardManager;
 var mouseClickedEvent = new Event();
 
-var isLogging = false,
-    titleFont,
-    gameLog = [],
-    gameMode,
-    gameStatus,
-    playerOne,
-    playerTwo,
-    currentPlayer,
+var titleFont,
     newGameButton,
+    modeButton,
+    difficultyButton,
     pauseButton,
     undoButton,
     redoButton,
     logButton,
     saveLogButton;
 
-const GAMESTATS = {
-    'PLAY': 0,
-    'PAUSE': 1
-}
-
-const GAMEMODES = {
-    // computer vs human
-    'CvsH': 0,
-
-    // human vs human
-    'HvsH': 1,
-
-    // computer vs computer
-    'CvsC': 2
-}
-
 function preload() {
     titleFont = loadFont('font/Modak-Regular.ttf');
 }
 
 function setup() {
-    createCanvas(600, 600);
-
-    gameMode = GAMEMODES.CvsH;
-    gameStatus = GAMESTATS.PLAY;
-    playerOne = {
-        isHuman: false,
-        sign: 'X'
-    };
-    playerTwo = {
-        isHuman: true,
-        sign: 'O'
-    };;
-    currentPlayer = playerOne;
+    createCanvas(700, 600);
 
     boardManager = new BoardManager({
         grid: 3,
@@ -62,88 +29,174 @@ function setup() {
             console.log('NEW GAME')
         },
         moveUndoCallback: () => {
-            currentPlayer = getNextPlayer();
+            gameManager.setCurrentPlayer(gameManager.getNextPlayer());
             console.log('UNDO')
         },
         moveRedoCallback: () => {
-            currentPlayer = getNextPlayer();
             console.log('REDO')
         },
         moveExecutedCallback: (e) => {
-            if (isLogging) logMove(e, boardManager.board);
-            console.log(`Move Executed: ${e.player}:[row:${e.row + 1}, col:${e.col + 1}]`)
-        },
+            gameManager.setCurrentPlayer(gameManager.getNextPlayer());
+            if (gameManager.isLogging)
+                gameManager.logMove(e, boardManager.board);
+            console.log(`Move Executed: ${e.player}:[row:${e.row + 1}, col:${e.col + 1}]`);
+        }
+    });
+
+    gameManager = new GameManager({
+        mode: GAMEMODES.cvh,
+        status: GAMESTATS.play,
+        difficulty: GAMEDIFFICULTY.easy,
+        boardManager: boardManager
+    });
+
+    gameManager.setPlayerOne({
+        sign: 'X',
+        isHuman: false
+    });
+    gameManager.setPlayerTwo({
+        sign: 'O',
+        isHuman: true
+    });
+    gameManager.setCurrentPlayer({
+        sign: 'X',
+        isHuman: false
     });
 
     newGameButton = new Button({
-        x: 410,
+        x: 420,
         y: 150,
         width: 90,
         text: 'NEW',
         clickCallback: () => {
-            currentPlayer = playerOne;
-            boardManager.resetBoard();
+            gameManager.newGame();
         }
     });
 
     pauseButton = new Button({
-        x: 410,
-        y: 200,
+        x: 520,
+        y: 150,
         width: 90,
         text: 'PAUSE',
         clickCallback: () => {
-            if (gameStatus == GAMESTATS.PLAY) {
-                gameStatus = GAMESTATS.PAUSE;
+            if (gameManager.getStatus() == GAMESTATS.play) {
+                gameManager.setStatus(GAMESTATS.pause);
                 pauseButton.text = 'PLAY';
             } else {
-                gameStatus = GAMESTATS.PLAY;
+                gameManager.setStatus(GAMESTATS.play);
                 pauseButton.text = 'PAUSE';
             }
         }
     });
 
     undoButton = new Button({
-        x: 410,
-        y: 250,
+        x: 420,
+        y: 200,
         width: 90,
         text: 'UNDO',
         clickCallback: () => {
-            gameStatus = GAMESTATS.PAUSE;
+            gameManager.setStatus(GAMESTATS.pause);
             pauseButton.text = 'PLAY';
             boardManager.undo();
         }
     });
 
     redoButton = new Button({
-        x: 410,
-        y: 300,
+        x: 520,
+        y: 200,
         width: 90,
         text: 'REDO',
         clickCallback: () => {
-            gameStatus = GAMESTATS.PAUSE;
+            gameManager.setStatus(GAMESTATS.pause);
             pauseButton.text = 'PLAY';
             boardManager.redo();
         }
     });
 
     logButton = new Button({
-        x: 410,
-        y: 350,
+        x: 420,
+        y: 250,
         width: 90,
         text: 'LOG: OFF',
         clickCallback: () => {
-            isLogging = !isLogging;
-            logButton.text = isLogging ? "LOG: ON" : "LOG: OFF";
+            gameManager.isLogging = !gameManager.isLogging;
+            logButton.text = gameManager.isLogging ? "LOG: ON" : "LOG: OFF";
         }
     });
 
     saveLogButton = new Button({
-        x: 410,
-        y: 400,
+        x: 520,
+        y: 250,
         width: 90,
         text: 'SAVE LOG',
         clickCallback: () => {
-            saveJSON(gameLog, 'log.json');
+            saveJSON(gameManager.getLogs(), 'log.json');
+        }
+    });
+
+    difficultyButton = new Button({
+        x: 420,
+        y: 300,
+        width: 190,
+        text: 'DIFFICULTY: EASY',
+        clickCallback: () => {
+            if (gameManager.getDifficulty() == GAMEDIFFICULTY.easy) {
+                gameManager.setDifficulty(GAMEDIFFICULTY.normal);
+                difficultyButton.text = 'DIFFICULTY: NORMAL';
+            } else if (gameManager.getDifficulty() == GAMEDIFFICULTY.normal) {
+                gameManager.setDifficulty(GAMEDIFFICULTY.impossible);
+                difficultyButton.text = 'DIFFICULTY: IMPOSSIBLE';
+            } else if (gameManager.getDifficulty() == GAMEDIFFICULTY.impossible) {
+                gameManager.setDifficulty(GAMEDIFFICULTY.easy);
+                difficultyButton.text = 'DIFFICULTY: EASY';
+            }
+
+            gameManager.newGame();
+        }
+    });
+
+    modeButton = new Button({
+        x: 420,
+        y: 350,
+        width: 190,
+        text: 'MODE: COMPUTER VS HUMAN',
+        clickCallback: () => {
+            if (gameManager.getMode() == GAMEMODES.cvh) {
+                gameManager.setPlayerOne({
+                    sign: 'X',
+                    isHuman: true
+                });
+                gameManager.setPlayerTwo({
+                    sign: 'O',
+                    isHuman: true
+                });
+                gameManager.setMode(GAMEMODES.hvh);
+                modeButton.text = 'MODE: HUMAN VS HUMAN';
+            } else if (gameManager.getMode() == GAMEMODES.hvh) {
+                gameManager.setPlayerOne({
+                    sign: 'X',
+                    isHuman: false
+                });
+                gameManager.setPlayerTwo({
+                    sign: 'O',
+                    isHuman: false
+                });
+                gameManager.setMode(GAMEMODES.cvc);
+                modeButton.text = 'MODE: COMPUTER VS COMPUTER';
+            } else if (gameManager.getMode() == GAMEMODES.cvc) {
+                gameManager.setPlayerOne({
+                    sign: 'X',
+                    isHuman: false
+                });
+                gameManager.setPlayerTwo({
+                    sign: 'O',
+                    isHuman: true
+                });
+                gameManager.setMode(GAMEMODES.cvh);
+                modeButton.text = 'MODE: COMPUTER VS HUMAN';
+            }
+
+            gameManager.newGame();
         }
     });
 
@@ -160,73 +213,48 @@ function mouseClicked(e) {
 }
 
 function onMouseClicked(e) {
-    if (isBoardClicked(e.mouseX, e.mouseY) && canHumanPlay()) {
+    if (isBoardClicked(e.mouseX, e.mouseY)) {
         let cell = getClickedCell(e.mouseX, e.mouseY);
-        humanPlay({
-            player: currentPlayer.sign,
-            row: cell.row,
-            col: cell.col
-        });
+        if (gameManager.canHumanPlay())
+            boardManager.execute({
+                row: cell.row,
+                col: cell.col,
+                player: gameManager.getCurrentPlayer().sign
+            });
     }
-}
-
-function canHumanPlay() {
-    return gameStatus != GAMESTATS.PAUSE && gameMode != GAMEMODES.CvsC && currentPlayer.isHuman;
-}
-
-function canComputerPlay() {
-    return gameStatus != GAMESTATS.PAUSE && gameMode != GAMEMODES.HvsH && !currentPlayer.isHuman;
-}
-
-function humanPlay(move) {
-    boardManager.execute(move);
-    currentPlayer = getNextPlayer();
 }
 
 function computerPlay() {
-    if (gameStatus == GAMESTATS.PAUSE) return;
-
     let moves = [],
-        board = boardManager.board;
+        bestMove,
+        difficulty = gameManager.getDifficulty(),
+        currentPlayer = gameManager.getCurrentPlayer().sign,
+        currentState = new TicTacNode({
+            board: boardManager.board,
+            player: currentPlayer.sign
+        });
 
-    let currentState = new TicTacNode({
-        board: boardManager.board,
-        player: currentPlayer.sign
+    boardManager.getOpenCells().forEach(cell => {
+        let node = currentState.clone();
+        node.board[cell.row][cell.col] = node.player = currentPlayer;
+        moves.push({
+            row: cell.row,
+            col: cell.col,
+            player: currentPlayer,
+            score: minmax(node, difficulty, currentPlayer == 'X' ? 'min' : 'max')
+        });
     });
-
-    for (let i = 0; i < board.length; i++) {
-        for (let j = 0; j < board.length; j++) {
-            if (board[i][j] != 0) continue;
-            let node = currentState.clone();
-            node.board[i][j] = node.player = currentPlayer.sign;            
-            moves.push({
-                row: i,
-                col: j,
-                player: currentPlayer.sign,
-                score: minmax(node, 10, currentPlayer.sign == 'X' ? 'min' : 'max')
-            });
-        }
-    }
 
     moves = shuffle(moves);
 
-    let bestMove = moves.find(m => m.score == Math.max.apply({}, moves.map(i => i.score)));
+    bestMove = moves.find(m => {
+        if (currentPlayer == 'X')
+            return m.score == Math.max.apply({}, moves.map(i => i.score))
+        else
+            return m.score == Math.min.apply({}, moves.map(i => i.score))
+    });
 
     boardManager.execute(bestMove);
-    currentPlayer = getNextPlayer();
-}
-
-function logMove(move, board) {
-    let log = {
-        player: move.player,
-        move: {
-            row: move.row,
-            col: move.col
-        },
-        board: board.map(r => r.slice(0))
-    }
-
-    gameLog.push(log);
 }
 
 function isBoardClicked(mouseX, mouseY) {
@@ -258,31 +286,11 @@ function getClickedCell(mouseX, mouseY) {
     }
 }
 
-function getNextPlayer() {
-    return currentPlayer.sign == playerOne.sign ? playerTwo : playerOne;
-}
-
 function drawStatus() {
-    let status = "";
-    if (gameStatus == GAMESTATS.PAUSE) 
-        status = `STATUS: PAUSED`;        
-    else if (boardManager.getWinner() == 'X')
-        status = `STATUS: X IS WINNER`;
-    else if (boardManager.getWinner() == 'O')
-        status = `STATUS: O IS WINNER`;
-    else if (boardManager.getWinner() == 'tie')
-        status = `STATUS: GAME IS TIE`;
-    else if (boardManager.getWinner() == null) {
-        if (currentPlayer.sign == 'X')
-            status = `STATUS: X TURN`;
-        if (currentPlayer.sign == 'O')
-            status = `STATUS: O TURN`;
-    }
-
     textAlign(LEFT, TOP);
     textStyle(BOLD);
     textSize(15);
-    text(status, 100, 470, 400, 200);
+    text(gameManager.statusToString(), 100, 470, 400, 200);
 }
 
 function draw() {
@@ -311,9 +319,11 @@ function draw() {
     redoButton.draw();
     logButton.draw();
     saveLogButton.draw();
+    difficultyButton.draw();
+    modeButton.draw();
 
     // computer play
-    if (frameCount % 20 == 0 && canComputerPlay()) computerPlay();
+    if (frameCount % 20 == 0 && gameManager.canComputerPlay()) computerPlay();
 
     // draw status 
     drawStatus();
