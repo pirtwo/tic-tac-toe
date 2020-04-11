@@ -1,5 +1,5 @@
 # TIC TAC TOE :)
-The [p5.js](https://p5js.org) powered tic tac toe game.
+This is a TIC-TAC-TOE game, using [p5.js](https://p5js.org).
 
 for running the game:
 
