@@ -31,87 +31,6 @@ const sk = (p5) => {
         logButton,
         saveLogButton;
 
-    function onMouseClicked(e) {
-        if (isBoardClicked(e.mouseX, e.mouseY)) {
-            let cell = getClickedCell(e.mouseX, e.mouseY);
-            if (gameManager.canHumanPlay())
-                boardManager.execute({
-                    row: cell.row,
-                    col: cell.col,
-                    player: gameManager.getCurrentPlayer().sign
-                });
-        }
-    }
-
-    function computerPlay() {
-        let moves = [],
-            bestMove,
-            difficulty = gameManager.getDifficulty(),
-            currentPlayer = gameManager.getCurrentPlayer().sign,
-            currentState = new TicTacNode({
-                board: boardManager.board,
-                player: currentPlayer.sign
-            });
-
-        boardManager.getOpenCells().forEach(cell => {
-            let node = currentState.clone();
-            node.board[cell.row][cell.col] = node.player = currentPlayer;
-            moves.push({
-                row: cell.row,
-                col: cell.col,
-                player: currentPlayer,
-                score: minmax(node, difficulty, currentPlayer == 'X' ? 'min' : 'max')
-            });
-        });
-
-        moves = p5.shuffle(moves);
-
-        bestMove = moves.find(m => {
-            if (currentPlayer == 'X')
-                return m.score == Math.max.apply({}, moves.map(i => i.score))
-            else
-                return m.score == Math.min.apply({}, moves.map(i => i.score))
-        });
-
-        boardManager.execute(bestMove);
-    }
-
-    function isBoardClicked(mouseX, mouseY) {
-        return mouseX > boardManager.boardPosition.x &&
-            mouseX < boardManager.boardPosition.x + boardManager.boardSize &&
-            mouseY > boardManager.boardPosition.y &&
-            mouseY < boardManager.boardPosition.y + boardManager.boardSize;
-    }
-
-    function getClickedCell(mouseX, mouseY) {
-        let x, y, cellSize = boardManager.boardSize / boardManager.grid;
-
-        for (let i = 0; i < boardManager.grid; i++) {
-            y = boardManager.boardPosition.y + cellSize * i;
-            for (let j = 0; j < boardManager.grid; j++) {
-                x = boardManager.boardPosition.x + cellSize * j;
-
-                if (mouseX > x &&
-                    mouseX < x + cellSize &&
-                    mouseY > y &&
-                    mouseY < y + cellSize
-                ) {
-                    return {
-                        row: i,
-                        col: j
-                    }
-                }
-            }
-        }
-    }
-
-    function drawStatus(p5) {
-        p5.textAlign(p5.LEFT, p5.TOP);
-        p5.textStyle(p5.BOLD);
-        p5.textSize(15);
-        p5.text(gameManager.statusToString(), 100, 470, 400, 200);
-    }
-
     p5.preload = () => {
         titleFont = p5.loadFont('font/Modak-Regular.ttf');
     }
@@ -172,7 +91,7 @@ const sk = (p5) => {
             width: 90,
             text: 'NEW',
             mouseClickedEvent: mouseClickedEvent,
-            clickCallback: function() {
+            clickCallback: function () {
                 console.log("new game!!!");
                 gameManager.newGame();
             }
@@ -240,7 +159,7 @@ const sk = (p5) => {
             text: 'SAVE LOG',
             mouseClickedEvent: mouseClickedEvent,
             clickCallback: () => {
-                saveJSON(gameManager.getLogs(), 'log.json');
+                p5.saveJSON(gameManager.getLogs(), 'log.json');
             }
         });
 
@@ -319,7 +238,7 @@ const sk = (p5) => {
         let mouseX = p5.mouseX;
         let mouseY = p5.mouseY;
         let mouseButton = p5.mouseButton;
-        
+
         mouseClickedEvent.callEventHandlers({
             mouseX,
             mouseY,
@@ -361,7 +280,88 @@ const sk = (p5) => {
         if (p5.frameCount % 20 == 0 && gameManager.canComputerPlay()) computerPlay();
 
         // draw status 
-        drawStatus(p5);
+        drawStatus();
+    }
+
+    function onMouseClicked(e) {
+        if (isBoardClicked(e.mouseX, e.mouseY)) {
+            let cell = getClickedCell(e.mouseX, e.mouseY);
+            if (gameManager.canHumanPlay())
+                boardManager.execute({
+                    row: cell.row,
+                    col: cell.col,
+                    player: gameManager.getCurrentPlayer().sign
+                });
+        }
+    }
+
+    function computerPlay() {
+        let moves = [],
+            bestMove,
+            difficulty = gameManager.getDifficulty(),
+            currentPlayer = gameManager.getCurrentPlayer().sign,
+            currentState = new TicTacNode({
+                board: boardManager.board,
+                player: currentPlayer.sign
+            });
+
+        boardManager.getOpenCells().forEach(cell => {
+            let node = currentState.clone();
+            node.board[cell.row][cell.col] = node.player = currentPlayer;
+            moves.push({
+                row: cell.row,
+                col: cell.col,
+                player: currentPlayer,
+                score: minmax(node, difficulty, currentPlayer == 'X' ? 'min' : 'max')
+            });
+        });
+
+        moves = p5.shuffle(moves);
+
+        bestMove = moves.find(m => {
+            if (currentPlayer == 'X')
+                return m.score == Math.max.apply({}, moves.map(i => i.score))
+            else
+                return m.score == Math.min.apply({}, moves.map(i => i.score))
+        });
+
+        boardManager.execute(bestMove);
+    }
+
+    function isBoardClicked(mouseX, mouseY) {
+        return mouseX > boardManager.boardPosition.x &&
+            mouseX < boardManager.boardPosition.x + boardManager.boardSize &&
+            mouseY > boardManager.boardPosition.y &&
+            mouseY < boardManager.boardPosition.y + boardManager.boardSize;
+    }
+
+    function getClickedCell(mouseX, mouseY) {
+        let x, y, cellSize = boardManager.boardSize / boardManager.grid;
+
+        for (let i = 0; i < boardManager.grid; i++) {
+            y = boardManager.boardPosition.y + cellSize * i;
+            for (let j = 0; j < boardManager.grid; j++) {
+                x = boardManager.boardPosition.x + cellSize * j;
+
+                if (mouseX > x &&
+                    mouseX < x + cellSize &&
+                    mouseY > y &&
+                    mouseY < y + cellSize
+                ) {
+                    return {
+                        row: i,
+                        col: j
+                    }
+                }
+            }
+        }
+    }
+
+    function drawStatus() {
+        p5.textAlign(p5.LEFT, p5.TOP);
+        p5.textStyle(p5.BOLD);
+        p5.textSize(15);
+        p5.text(gameManager.statusToString(), 100, 470, 400, 200);
     }
 }
 
